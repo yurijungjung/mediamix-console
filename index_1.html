@@ -1,0 +1,1643 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Performance Chef — 퍼포먼스 마케터를 위한 미디어믹스 레시피</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%91%E2%80%8D%F0%9F%8D%B3%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --ink:#0B0E14;
+    --panel:#12161F;
+    --panel-2:#171C28;
+    --line-dark:#242B3D;
+    --paper:#F5F3EE;
+    --paper-2:#EDE9E0;
+    --line-light:#DAD5C8;
+    --mint:#00D9A3;
+    --mint-dim:#0A5C48;
+    --amber:#FFB627;
+    --red:#FF6B5E;
+    --text-hi:#F5F3EE;
+    --text-lo:#8A93A6;
+    --text-ink:#14171F;
+    --text-ink-muted:#6B7280;
+    --radius:3px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{background:var(--ink); color:var(--text-hi);}
+  body{
+    font-family:'Pretendard', -apple-system, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .display{font-family:'Space Grotesk','Pretendard',sans-serif;}
+  .mono{font-family:'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums;}
+
+  /* ===== SHELL ===== */
+  .shell{
+    display:grid;
+    grid-template-columns: 340px 1fr;
+    min-height:100vh;
+  }
+  @media (max-width: 900px){
+    .shell{grid-template-columns: 1fr;}
+  }
+
+  /* ===== CONSOLE (LEFT) ===== */
+  .console{
+    background:var(--panel);
+    border-right:1px solid var(--line-dark);
+    padding:28px 24px 40px;
+    display:flex;
+    flex-direction:column;
+    gap:26px;
+    position:sticky;
+    top:0;
+    align-self:start;
+    height:100vh;
+    overflow-y:auto;
+  }
+  @media (max-width: 900px){
+    .console{position:relative; height:auto; border-right:none; border-bottom:1px solid var(--line-dark);}
+  }
+  .brand{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    padding-bottom:18px;
+    border-bottom:1px solid var(--line-dark);
+  }
+  .brand .tag{
+    font-size:10px;
+    letter-spacing:.18em;
+    color:var(--mint);
+    text-transform:uppercase;
+    font-weight:600;
+  }
+  .brand h1{
+    font-size:21px;
+    font-weight:700;
+    letter-spacing:-0.01em;
+    line-height:1.25;
+  }
+  .brand p{
+    font-size:12px;
+    color:var(--text-lo);
+    margin-top:2px;
+  }
+
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:9px;
+  }
+  .field-label{
+    font-size:11px;
+    letter-spacing:.06em;
+    color:var(--text-lo);
+    text-transform:uppercase;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .field-label .n{
+    color:var(--mint);
+    font-family:'IBM Plex Mono', monospace;
+  }
+
+  .chip-grid{
+    display:grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap:6px;
+  }
+  .chip{
+    border:1px solid var(--line-dark);
+    background:var(--panel-2);
+    color:var(--text-hi);
+    font-family:'Pretendard', sans-serif;
+    font-size:12.5px;
+    font-weight:500;
+    padding:9px 8px;
+    border-radius:var(--radius);
+    cursor:pointer;
+    text-align:center;
+    transition:border-color .12s, background .12s, color .12s;
+    line-height:1.3;
+  }
+  .chip:hover{border-color:#3A4258;}
+  .chip.active{
+    background:var(--mint);
+    border-color:var(--mint);
+    color:#062019;
+    font-weight:700;
+  }
+
+  .seg{
+    display:flex;
+    border:1px solid var(--line-dark);
+    border-radius:var(--radius);
+    overflow:hidden;
+  }
+  .seg button{
+    flex:1;
+    background:var(--panel-2);
+    color:var(--text-lo);
+    border:none;
+    padding:10px 6px;
+    font-family:'Pretendard', sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    cursor:pointer;
+    border-right:1px solid var(--line-dark);
+  }
+  .seg button:last-child{border-right:none;}
+  .seg button.active{background:var(--amber); color:#231600;}
+
+  .budget-input{
+    display:flex;
+    align-items:center;
+    border:1px solid var(--line-dark);
+    background:var(--panel-2);
+    border-radius:var(--radius);
+    overflow:hidden;
+  }
+  .budget-input input{
+    flex:1;
+    background:transparent;
+    border:none;
+    outline:none;
+    color:var(--text-hi);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:16px;
+    font-weight:600;
+    padding:12px 10px;
+    width:100%;
+    min-width:0;
+  }
+  .budget-input .unit{
+    padding:0 12px;
+    color:var(--text-lo);
+    font-size:12px;
+    font-family:'IBM Plex Mono', monospace;
+    border-left:1px solid var(--line-dark);
+    align-self:stretch;
+    display:flex;
+    align-items:center;
+  }
+  .budget-presets{display:flex; gap:6px; flex-wrap:wrap;}
+  .preset-btn{
+    background:transparent;
+    border:1px solid var(--line-dark);
+    color:var(--text-lo);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    padding:5px 9px;
+    border-radius:2px;
+    cursor:pointer;
+  }
+  .preset-btn:hover{border-color:var(--mint); color:var(--mint);}
+
+  .generate-btn{
+    margin-top:4px;
+    background:var(--mint);
+    color:#062019;
+    border:none;
+    padding:15px;
+    font-family:'Space Grotesk', sans-serif;
+    font-size:14.5px;
+    font-weight:700;
+    letter-spacing:.01em;
+    border-radius:var(--radius);
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    transition:transform .08s, filter .12s;
+  }
+  .generate-btn:hover{filter:brightness(1.08);}
+  .generate-btn:active{transform:scale(.985);}
+
+  .console-footnote{
+    font-size:11px;
+    color:#4A5268;
+    line-height:1.6;
+    padding-top:16px;
+    border-top:1px solid var(--line-dark);
+  }
+
+  /* ===== SHEET (RIGHT) ===== */
+  .sheet{
+    background:var(--paper);
+    color:var(--text-ink);
+    padding:0;
+    min-height:100vh;
+  }
+  .sheet-inner{
+    max-width:1080px;
+    margin:0 auto;
+    padding:36px 40px 80px;
+  }
+  @media (max-width: 640px){
+    .sheet-inner{padding:24px 18px 60px;}
+  }
+
+  .empty-state{
+    min-height:70vh;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    justify-content:center;
+    gap:14px;
+    max-width:520px;
+  }
+  .empty-state .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:.14em;
+    color:var(--text-ink-muted);
+    text-transform:uppercase;
+  }
+  .empty-state h2{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:32px;
+    font-weight:700;
+    line-height:1.3;
+  }
+  .empty-state p{
+    font-size:14px;
+    color:var(--text-ink-muted);
+    line-height:1.7;
+  }
+
+  .plan-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:16px;
+    padding-bottom:20px;
+    border-bottom:2px solid var(--text-ink);
+    margin-bottom:22px;
+  }
+  .plan-header .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:.12em;
+    color:var(--text-ink-muted);
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  .plan-header h2{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:27px;
+    font-weight:700;
+  }
+  .plan-tags{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+  }
+  .plan-tag{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    border:1px solid var(--text-ink);
+    padding:4px 9px;
+    border-radius:2px;
+    color:var(--text-ink);
+    white-space:nowrap;
+  }
+
+  /* Signature: segmented allocation bar */
+  .alloc-bar-wrap{
+    margin-bottom:30px;
+  }
+  .alloc-bar-label{
+    display:flex;
+    justify-content:space-between;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--text-ink-muted);
+    margin-bottom:8px;
+    letter-spacing:.04em;
+  }
+  .alloc-bar{
+    display:flex;
+    width:100%;
+    height:34px;
+    border:1px solid var(--text-ink);
+    border-radius:2px;
+    overflow:hidden;
+  }
+  .alloc-seg{
+    height:100%;
+    position:relative;
+    border-right:1px solid var(--paper);
+    min-width:2px;
+  }
+  .alloc-seg:last-child{border-right:none;}
+  .alloc-legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px 18px;
+    margin-top:12px;
+  }
+  .alloc-legend-item{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:11.5px;
+    color:var(--text-ink-muted);
+  }
+  .alloc-legend-dot{
+    width:9px; height:9px; border-radius:1px; flex-shrink:0;
+  }
+
+  /* summary cards */
+  .summary-row{
+    display:grid;
+    grid-template-columns:repeat(5, 1fr);
+    gap:1px;
+    background:var(--text-ink);
+    border:1px solid var(--text-ink);
+    margin-bottom:30px;
+  }
+  @media (max-width:720px){
+    .summary-row{grid-template-columns:repeat(2,1fr);}
+  }
+  .summary-cell{
+    background:var(--paper);
+    padding:14px 14px 16px;
+  }
+  .summary-cell .k{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    color:var(--text-ink-muted);
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    margin-bottom:6px;
+  }
+  .summary-cell .v{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:18px;
+    font-weight:600;
+    color:var(--text-ink);
+  }
+
+  /* table */
+  .table-wrap{
+    border:1px solid var(--text-ink);
+    margin-bottom:28px;
+    overflow-x:auto;
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:920px;
+  }
+  thead th{
+    text-align:left;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:var(--text-ink-muted);
+    background:var(--paper-2);
+    padding:10px 12px;
+    border-bottom:1px solid var(--text-ink);
+    white-space:nowrap;
+  }
+  tbody tr{border-bottom:1px solid var(--line-light);}
+  tbody tr:last-child{border-bottom:none;}
+  tbody tr:hover{background:#EFEBE1;}
+  tbody td{
+    padding:11px 12px;
+    font-size:13px;
+    vertical-align:top;
+  }
+  td.mediaName{font-weight:600; font-family:'Pretendard',sans-serif;}
+  td.mediaName .cat{
+    display:block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    color:var(--text-ink-muted);
+    font-weight:400;
+    margin-top:2px;
+  }
+  td.num{font-family:'IBM Plex Mono', monospace; text-align:right; white-space:nowrap;}
+  .core-badge{
+    display:inline-block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9.5px;
+    background:var(--text-ink);
+    color:var(--paper);
+    padding:2px 5px;
+    border-radius:2px;
+    margin-left:6px;
+    vertical-align:middle;
+  }
+  .warn-badge{
+    display:inline-block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px;
+    color:#B4491C;
+    margin-top:3px;
+  }
+  .fixed-badge{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px;
+    color:var(--text-ink-muted);
+  }
+
+  .export-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:14px;
+  }
+  .export-note{
+    font-size:11.5px;
+    color:var(--text-ink-muted);
+    line-height:1.6;
+    max-width:520px;
+  }
+  .export-btn{
+    background:var(--text-ink);
+    color:var(--paper);
+    border:none;
+    padding:13px 22px;
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:13.5px;
+    border-radius:2px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    white-space:nowrap;
+  }
+  .export-btn:hover{background:#2A3040;}
+
+  ::-webkit-scrollbar{height:8px; width:8px;}
+  ::-webkit-scrollbar-thumb{background:#3A4258; border-radius:4px;}
+  .console::-webkit-scrollbar-thumb{background:#2A3142;}
+
+  /* ===== upload field extras ===== */
+  .upload-btn-row{display:flex; flex-direction:column; gap:6px;}
+  .ghost-btn{
+    background:transparent;
+    border:1px dashed #3A4258;
+    color:var(--text-lo);
+    font-family:'Pretendard', sans-serif;
+    font-size:12px;
+    padding:9px 8px;
+    border-radius:var(--radius);
+    cursor:pointer;
+    text-align:center;
+  }
+  .ghost-btn:hover{border-color:var(--mint); color:var(--mint);}
+  .link-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:11.5px;
+    color:var(--text-lo);
+  }
+  .link-row button{
+    background:none; border:none; color:var(--mint);
+    font-family:'Pretendard',sans-serif; font-size:11.5px; cursor:pointer;
+    text-decoration:underline;
+  }
+  .data-badge{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px;
+    background:var(--mint-dim);
+    color:var(--mint);
+    padding:1px 6px;
+    border-radius:8px;
+  }
+
+  /* ===== MODAL ===== */
+  .modal-overlay{
+    position:fixed; inset:0;
+    background:rgba(11,14,20,.72);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:100;
+    padding:24px;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-box{
+    background:var(--paper);
+    color:var(--text-ink);
+    width:100%;
+    max-width:860px;
+    max-height:85vh;
+    overflow-y:auto;
+    border-radius:4px;
+    border:1px solid var(--text-ink);
+  }
+  .modal-head{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:18px 22px;
+    border-bottom:2px solid var(--text-ink);
+    position:sticky; top:0; background:var(--paper);
+  }
+  .modal-head h3{font-family:'Space Grotesk',sans-serif; font-size:18px;}
+  .modal-close{
+    background:none; border:none; font-size:20px; cursor:pointer; color:var(--text-ink);
+    line-height:1;
+  }
+  .modal-body{padding:20px 22px 26px;}
+  .modal-body p.help{font-size:12.5px; color:var(--text-ink-muted); line-height:1.7; margin-bottom:14px;}
+  .modal-table{width:100%; border-collapse:collapse; margin-bottom:16px;}
+  .modal-table th{
+    text-align:left; font-family:'IBM Plex Mono',monospace; font-size:10.5px;
+    text-transform:uppercase; color:var(--text-ink-muted); border-bottom:1px solid var(--text-ink);
+    padding:7px 8px;
+  }
+  .modal-table td{padding:7px 8px; font-size:12.5px; border-bottom:1px solid var(--line-light); vertical-align:middle;}
+  .modal-table select{
+    font-family:'Pretendard',sans-serif; font-size:12px; padding:5px 6px;
+    border:1px solid var(--line-light); border-radius:2px; background:#fff; max-width:190px;
+  }
+  .row-unmatched{background:#FCEFE9;}
+  .modal-actions{display:flex; justify-content:flex-end; gap:10px; margin-top:6px;}
+  .btn-primary{
+    background:var(--text-ink); color:var(--paper); border:none; padding:11px 20px;
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13px; border-radius:2px; cursor:pointer;
+  }
+  .btn-secondary{
+    background:transparent; color:var(--text-ink); border:1px solid var(--text-ink); padding:11px 20px;
+    font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13px; border-radius:2px; cursor:pointer;
+  }
+  .manage-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:11px 0; border-bottom:1px solid var(--line-light); gap:12px;
+  }
+  .manage-row .info{font-size:12.5px; line-height:1.6;}
+  .manage-row .info b{font-family:'Space Grotesk',sans-serif;}
+  .manage-row .stats{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--text-ink-muted);}
+  .manage-row button{
+    background:none; border:1px solid var(--red); color:var(--red); font-size:11px;
+    padding:5px 9px; border-radius:2px; cursor:pointer; white-space:nowrap;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .empty-manage{font-size:12.5px; color:var(--text-ink-muted); padding:20px 0;}
+
+  /* ===== editable budget cell ===== */
+  .budget-cell{display:flex; align-items:center; justify-content:flex-end; gap:5px;}
+  .budgetEditInput{
+    width:108px;
+    text-align:right;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    border:1px solid transparent;
+    background:transparent;
+    padding:5px 6px;
+    border-radius:2px;
+    color:var(--text-ink);
+  }
+  .budgetEditInput:hover{border-color:var(--line-light);}
+  .budgetEditInput:focus{border-color:var(--text-ink); background:#fff; outline:none;}
+  .budget-unit{font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--text-ink-muted);}
+  .row-reset-btn{
+    background:none; border:none; color:var(--text-ink-muted); cursor:pointer; font-size:13px;
+    padding:2px 4px; line-height:1;
+  }
+  .row-reset-btn:hover{color:var(--text-ink);}
+  .budget-status{font-family:'IBM Plex Mono',monospace; font-size:11.5px;}
+  .budget-status.over{color:var(--red); font-weight:600;}
+  .budget-status.under{color:var(--text-ink-muted);}
+  .budget-status.match{color:var(--mint-dim); font-weight:600;}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ===== CONSOLE ===== -->
+  <aside class="console">
+    <div class="brand">
+      <span class="tag">🧑‍🍳 Performance Chef</span>
+      <h1 class="display">PERFORMANCE<br>CHEF</h1>
+      <p>타겟·목적·채널이라는 재료를 넣으면, 딱 맞는 미디어믹스 레시피가 완성돼요</p>
+    </div>
+
+    <div class="field">
+      <div class="field-label"><span class="n">01</span> 타겟</div>
+      <div class="chip-grid" id="targetChips"></div>
+    </div>
+
+    <div class="field">
+      <div class="field-label"><span class="n">02</span> 캠페인 목적</div>
+      <div class="seg" id="objectiveSeg"></div>
+    </div>
+
+    <div class="field">
+      <div class="field-label"><span class="n">03</span> 판매 채널</div>
+      <div class="seg" id="channelSeg"></div>
+    </div>
+
+    <div class="field">
+      <div class="field-label"><span class="n">04</span> 총 예산</div>
+      <div class="budget-input">
+        <input type="text" id="budgetInput" inputmode="numeric" value="10,000,000">
+        <span class="unit">KRW</span>
+      </div>
+      <div class="budget-presets" id="budgetPresets"></div>
+    </div>
+
+    <div class="field">
+      <div class="field-label"><span class="n">05</span> 배분 방식</div>
+      <div class="seg" id="allocSeg"></div>
+    </div>
+
+    <div class="field">
+      <div class="field-label">
+        <span class="n">06</span> 실측 데이터 <span class="data-badge" id="dataCountBadge">0건 누적</span>
+      </div>
+      <input type="file" id="uploadInput" accept=".xlsx,.xls,.csv" style="display:none">
+      <div class="upload-btn-row">
+        <button class="chip" id="uploadBtn" style="width:100%">📊 집행 리포트 업로드</button>
+        <div class="link-row">
+          <button id="templateBtn">템플릿 다운로드</button>
+          <button id="manageDataBtn">누적 데이터 관리</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="generate-btn" id="generateBtn">레시피 완성하기 →</button>
+
+    <p class="console-footnote">
+      * 표기된 CTR/CPC/조회단가는 업계 평균 추정치입니다. 실제 집행 리포트를 업로드하면 매체별 실측 데이터가 누적되어, 다음 생성부터 추정치 대신 실측 평균값이 우선 적용됩니다.
+    </p>
+  </aside>
+
+  <!-- ===== SHEET ===== -->
+  <main class="sheet">
+    <div class="sheet-inner" id="sheetInner">
+      <div class="empty-state">
+        <span class="eyebrow">Kitchen Ready</span>
+        <h2 class="display">왼쪽에서 재료(타겟·목적)를<br>먼저 골라주세요</h2>
+        <p>타겟 오디언스, 캠페인 목적(런칭·전환·리텐션), 판매 채널, 예산을 입력하면 조건에 맞는 매체 리스트와 예상 노출·클릭·CTR·CPC, 예산 배분안을 계산해 레시피처럼 표로 완성해드려요. 엑셀로 바로 다운로드할 수 있습니다.</p>
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<!-- ===== IMPORT PREVIEW MODAL ===== -->
+<div class="modal-overlay" id="importModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 class="display">업로드 데이터 확인</h3>
+      <button class="modal-close" id="importModalClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="help" id="importHelp"></p>
+      <table class="modal-table">
+        <thead>
+          <tr><th>업로드된 매체명</th><th>출처 시트</th><th>매칭 매체</th><th style="text-align:right">노출</th><th style="text-align:right">클릭</th><th style="text-align:right">광고비(원)</th></tr>
+        </thead>
+        <tbody id="importTableBody"></tbody>
+      </table>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="importCancelBtn">취소</button>
+        <button class="btn-primary" id="importConfirmBtn">누적 데이터에 반영</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MANAGE DATA MODAL ===== -->
+<div class="modal-overlay" id="manageModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 class="display">누적 실측 데이터</h3>
+      <button class="modal-close" id="manageModalClose">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="help">업로드된 집행 리포트가 매체별로 누적된 값입니다. 미디어믹스 생성 시 여기 있는 매체는 추정치 대신 이 실측 평균값이 사용됩니다.</p>
+      <div id="manageList"></div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="resetAllBtn">전체 초기화</button>
+        <button class="btn-primary" id="manageCloseBtn">닫기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   1. DATA DEFINITIONS
+========================================================= */
+const TARGETS = [
+  {id:'mom', label:'맘/육아 (25-45)'},
+  {id:'single', label:'1인가구'},
+  {id:'worker', label:'직장인'},
+  {id:'senior', label:'시니어 (50+)'},
+  {id:'teen', label:'10대 (10-19)'},
+];
+const OBJECTIVES = [
+  {id:'launch', label:'런칭/인지도'},
+  {id:'conversion', label:'전환'},
+  {id:'retention', label:'리텐션/재구매'},
+];
+const CHANNELS = [
+  {id:'owned', label:'자사몰'},
+  {id:'naver', label:'네이버 스토어'},
+];
+const ALLOC_MODES = [
+  {id:'concentrate', label:'효율 집중형'},
+  {id:'spread', label:'고른 분산형'},
+];
+
+// type: 'ctr_cpc' (노출/클릭 계산) | 'cpv' (조회수 계산) | 'fixed' (패키지 단가, 계산 제외)
+// targets: ['all'] 이면 전 타겟 공통
+// objective: 해당 목적에 강하게 매칭되는 태그 배열
+// channel: 'all' | 'owned' | 'naver'
+const MEDIA = [
+  // ---- CORE 4 (항상 포함) ----
+  {id:'naver_gfa', name:'네이버 GFA', category:'디스플레이', core:true, targets:['all'], objective:['launch','conversion'], channel:'naver', type:'ctr_cpc', ctr:[0.3,0.8], cpc:[200,800], minBudget:100000},
+  {id:'kakao_moment', name:'카카오모먼트', category:'디스플레이', core:true, targets:['all'], objective:['launch','conversion'], channel:'owned', type:'ctr_cpc', ctr:[0.4,1.0], cpc:[150,600], minBudget:100000},
+  {id:'meta_ig', name:'메타(인스타그램)', category:'SNS', core:true, targets:['all'], objective:['launch','conversion','retention'], channel:'owned', type:'ctr_cpc', ctr:[0.8,1.5], cpc:[300,900], minBudget:10000},
+  {id:'google_gdn', name:'구글(GDN/유튜브)', category:'디스플레이·영상', core:true, targets:['all'], objective:['launch'], channel:'owned', type:'ctr_cpc', ctr:[0.3,0.6], cpc:[100,500], minBudget:50000},
+
+  // ---- COMMON (전 타겟 공통) ----
+  {id:'naver_sa', name:'네이버 검색광고(파워링크)', category:'검색', targets:['all'], objective:['conversion'], channel:'naver', type:'ctr_cpc', ctr:[1.5,3.0], cpc:[500,3000], minBudget:10000},
+  {id:'kakao_kw', name:'카카오 키워드광고', category:'검색', targets:['all'], objective:['conversion'], channel:'owned', type:'ctr_cpc', ctr:[1.0,2.0], cpc:[300,1500], minBudget:10000},
+  {id:'google_sa', name:'구글 검색광고(SA)', category:'검색', targets:['all'], objective:['conversion'], channel:'owned', type:'ctr_cpc', ctr:[2.0,4.0], cpc:[500,2500], minBudget:10000},
+  {id:'kakao_biz', name:'카카오톡 비즈보드', category:'배너', targets:['all'], objective:['launch','conversion'], channel:'owned', type:'ctr_cpc', ctr:[0.3,0.7], cpc:[150,500], minBudget:10000},
+  {id:'retargeting', name:'리타겟팅(GDN·메타 리마케팅)', category:'리타겟팅', targets:['all'], objective:['retention','conversion'], channel:'all', type:'ctr_cpc', ctr:[1.0,2.0], cpc:[200,600], minBudget:50000},
+  {id:'toss', name:'토스', category:'슈퍼앱', targets:['all'], objective:['launch','conversion'], channel:'all', type:'ctr_cpc', ctr:[0.5,1.1], cpc:[300,900], minBudget:30000},
+  {id:'kakaopay', name:'카카오페이', category:'슈퍼앱', targets:['all'], objective:['launch','conversion'], channel:'all', type:'ctr_cpc', ctr:[0.4,0.9], cpc:[250,700], minBudget:30000},
+  {id:'coupang_ad', name:'쿠팡(광고상품)', category:'커머스', targets:['all'], objective:['conversion'], channel:'all', type:'ctr_cpc', ctr:[0.6,1.4], cpc:[300,1000], minBudget:50000},
+  {id:'naver_brand', name:'네이버 브랜드검색', category:'검색·패키지', targets:['all'], objective:['launch','conversion'], channel:'naver', type:'fixed', fixed:[500000,3000000], minBudget:500000},
+  {id:'crm_push', name:'앱푸시/문자 CRM', category:'CRM', targets:['all'], objective:['retention'], channel:'all', type:'fixed', fixed:[100000,500000], minBudget:100000},
+
+  // ---- MOM ----
+  {id:'ddocdoc', name:'똑닥', category:'육아 전문 앱', targets:['mom'], objective:['conversion','retention'], channel:'all', type:'ctr_cpc', ctr:[0.8,1.5], cpc:[400,1200], minBudget:500000},
+  {id:'logmom', name:'로그맘', category:'육아 전문 앱', targets:['mom'], objective:['conversion'], channel:'all', type:'ctr_cpc', ctr:[0.6,1.2], cpc:[300,900], minBudget:300000},
+  {id:'babytime', name:'베이비타임', category:'육아 전문 앱', targets:['mom'], objective:['conversion'], channel:'all', type:'ctr_cpc', ctr:[0.5,1.0], cpc:[300,800], minBudget:300000},
+  {id:'ange', name:'앙쥬(매거진)', category:'육아 미디어', targets:['mom'], objective:['launch'], channel:'all', type:'fixed', fixed:[1000000,5000000], minBudget:1000000},
+  {id:'littlemom', name:'리틀맘', category:'육아 미디어', targets:['mom'], objective:['launch'], channel:'all', type:'fixed', fixed:[800000,3000000], minBudget:800000},
+  {id:'babynews', name:'베이비뉴스', category:'육아 미디어', targets:['mom'], objective:['launch','conversion'], channel:'all', type:'ctr_cpc', ctr:[0.3,0.7], cpc:[500,1500], minBudget:300000},
+  {id:'obgyn', name:'산부인과 제휴(전광판/책자)', category:'오프라인 접점', targets:['mom'], objective:['launch'], channel:'all', type:'fixed', fixed:[500000,2000000], minBudget:500000},
+  {id:'jori', name:'조리원 제휴(웰컴박스)', category:'오프라인 접점', targets:['mom'], objective:['launch'], channel:'all', type:'fixed', fixed:[1000000,5000000], minBudget:1000000},
+  {id:'culture_center', name:'문화센터 제휴', category:'오프라인 접점', targets:['mom'], objective:['launch'], channel:'all', type:'fixed', fixed:[500000,1500000], minBudget:500000},
+  {id:'mom_influencer', name:'육아 인스타 인플루언서', category:'인플루언서', targets:['mom'], objective:['launch'], channel:'all', type:'fixed', fixed:[500000,3000000], minBudget:500000},
+  {id:'mom_youtube', name:'육아 유튜브 채널(브이로그)', category:'인플루언서·영상', targets:['mom'], objective:['launch'], channel:'all', type:'cpv', cpv:[20,50], minBudget:1000000},
+  {id:'kindermom', name:'킨더맘', category:'버티컬 커머스', targets:['mom'], objective:['conversion'], channel:'all', type:'ctr_cpc', ctr:[0.5,1.2], cpc:[200,700], minBudget:100000},
+  {id:'mamibook', name:'마미북(베이비페어 연계)', category:'버티컬 커머스', targets:['mom'], objective:['conversion'], channel:'all', type:'ctr_cpc', ctr:[0.4,0.9], cpc:[250,800], minBudget:200000},
+  {id:'aegicle', name:'애기클(아기용품 큐레이션)', category:'버티컬 커머스', targets:['mom'], objective:['launch','conversion'], channel:'all', type:'ctr_cpc', ctr:[0.6,1.3], cpc:[200,600], minBudget:200000},
+  {id:'mom_cafe', name:'네이버 맘카페(맘이베베 등)', category:'커뮤니티', targets:['mom'], objective:['launch','conversion'], channel:'all', type:'ctr_cpc', ctr:[0.5,1.5], cpc:[300,1000], minBudget:100000},
+
+  // ---- SINGLE ----
+  {id:'danggeun', name:'당근마켓 지역광고', category:'지역 생활', targets:['single'], objective:['launch','conversion'], channel:'all', type:'ctr_cpc', ctr:[0.6,1.3], cpc:[200,600], minBudget:50000},
+  {id:'dabang', name:'다방/직방', category:'부동산 앱', targets:['single'], objective:['conversion'], channel:'all', type:'ctr_cpc', ctr:[0.5,1.0], cpc:[300,800], minBudget:200000},
+  {id:'delivery_app', name:'배달앱(배민/쿠팡이츠) 광고', category:'커머스', targets:['single'], objective:['conversion'], channel:'all', type:'ctr_cpc', ctr:[0.7,1.5], cpc:[250,700], minBudget:30000},
+  {id:'ott', name:'OTT 광고(웨이브/티빙)', category:'영상', targets:['single'], objective:['launch'], channel:'all', type:'cpv', cpv:[15,35], minBudget:500000},
+  {id:'cvs', name:'편의점 제휴(CU/GS25 앱)', category:'오프라인 접점', targets:['single'], objective:['launch','conversion'], channel:'all', type:'fixed', fixed:[200000,1000000], minBudget:200000},
+
+  // ---- WORKER ----
+  {id:'blind', name:'블라인드', category:'직장인 커뮤니티', targets:['worker'], objective:['launch','conversion'], channel:'all', type:'ctr_cpc', ctr:[0.5,1.2], cpc:[400,1000], minBudget:300000},
+  {id:'linkedin', name:'링크드인', category:'커리어', targets:['worker'], objective:['conversion'], channel:'all', type:'ctr_cpc', ctr:[0.4,0.8], cpc:[800,2000], minBudget:30000},
+  {id:'newsletter', name:'뉴닉/캐릿(뉴스레터)', category:'뉴스레터', targets:['worker'], objective:['launch'], channel:'all', type:'fixed', fixed:[1000000,3000000], minBudget:1000000},
+  {id:'subway_tv', name:'지하철TV/스크린도어', category:'옥외', targets:['worker'], objective:['launch'], channel:'all', type:'fixed', fixed:[2000000,6000000], minBudget:2000000},
+  {id:'remember', name:'리멤버', category:'커리어', targets:['worker'], objective:['conversion','retention'], channel:'all', type:'ctr_cpc', ctr:[0.5,1.0], cpc:[500,1200], minBudget:300000},
+
+  // ---- SENIOR ----
+  {id:'kakaostory', name:'카카오스토리', category:'SNS', targets:['senior'], objective:['launch'], channel:'all', type:'ctr_cpc', ctr:[0.5,1.0], cpc:[200,600], minBudget:10000},
+  {id:'youtube_senior', name:'유튜브(시니어 채널)', category:'영상', targets:['senior'], objective:['launch'], channel:'all', type:'cpv', cpv:[15,30], minBudget:500000},
+  {id:'bravo', name:'브라보마이라이프', category:'시니어 미디어', targets:['senior'], objective:['launch'], channel:'all', type:'fixed', fixed:[1000000,4000000], minBudget:1000000},
+  {id:'radio', name:'라디오(교통방송 등)', category:'오디오', targets:['senior'], objective:['launch'], channel:'all', type:'fixed', fixed:[1000000,5000000], minBudget:1000000},
+  {id:'hospital', name:'병원/한의원 제휴', category:'오프라인 접점', targets:['senior'], objective:['conversion'], channel:'all', type:'fixed', fixed:[500000,2000000], minBudget:500000},
+  {id:'band', name:'밴드(BAND)', category:'커뮤니티', targets:['senior'], objective:['launch','retention'], channel:'all', type:'ctr_cpc', ctr:[0.6,1.2], cpc:[200,600], minBudget:10000},
+  {id:'cashwalk', name:'캐시워크', category:'리워드 앱', targets:['senior'], objective:['launch','conversion'], channel:'all', type:'ctr_cpc', ctr:[0.8,1.5], cpc:[100,400], minBudget:200000},
+  {id:'gooddoc', name:'굿닥/하이닥', category:'건강 앱', targets:['senior'], objective:['conversion'], channel:'all', type:'ctr_cpc', ctr:[0.7,1.3], cpc:[300,800], minBudget:300000},
+
+  // ---- TEEN ----
+  {id:'tiktok', name:'틱톡', category:'SNS', targets:['teen','single'], objective:['launch'], channel:'all', type:'ctr_cpc', ctr:[1.0,2.0], cpc:[200,600], minBudget:30000},
+  {id:'yt_shorts', name:'유튜브 쇼츠', category:'영상', targets:['teen'], objective:['launch'], channel:'all', type:'cpv', cpv:[10,25], minBudget:30000},
+  {id:'ig_reels', name:'인스타 릴스', category:'SNS', targets:['teen'], objective:['launch'], channel:'all', type:'ctr_cpc', ctr:[1.0,1.8], cpc:[250,700], minBudget:30000},
+  {id:'afreeca', name:'아프리카TV/치지직', category:'스트리밍', targets:['teen'], objective:['launch'], channel:'all', type:'fixed', fixed:[500000,3000000], minBudget:500000},
+  {id:'kakao_collab', name:'카카오톡 이모티콘/굿즈 콜라보', category:'브랜드 콜라보', targets:['teen'], objective:['launch'], channel:'all', type:'fixed', fixed:[1000000,5000000], minBudget:1000000},
+];
+
+/* =========================================================
+   2. STATE
+========================================================= */
+const state = {
+  target: 'mom',
+  objective: 'launch',
+  channel: 'owned',
+  budget: 10000000,
+  allocMode: 'concentrate',
+};
+
+/* =========================================================
+   3. RENDER CONTROLS
+========================================================= */
+function renderChips(){
+  const wrap = document.getElementById('targetChips');
+  wrap.innerHTML = '';
+  TARGETS.forEach(t=>{
+    const el = document.createElement('button');
+    el.className = 'chip' + (state.target===t.id ? ' active':'');
+    el.textContent = t.label;
+    el.onclick = ()=>{ state.target = t.id; renderChips(); };
+    wrap.appendChild(el);
+  });
+}
+function renderSeg(containerId, options, stateKey){
+  const wrap = document.getElementById(containerId);
+  wrap.innerHTML = '';
+  options.forEach(o=>{
+    const btn = document.createElement('button');
+    btn.className = state[stateKey]===o.id ? 'active' : '';
+    btn.textContent = o.label;
+    btn.onclick = ()=>{ state[stateKey] = o.id; renderSeg(containerId, options, stateKey); };
+    wrap.appendChild(btn);
+  });
+}
+function renderPresets(){
+  const wrap = document.getElementById('budgetPresets');
+  wrap.innerHTML = '';
+  [3000000, 5000000, 10000000, 30000000, 50000000].forEach(v=>{
+    const b = document.createElement('button');
+    b.className = 'preset-btn';
+    b.textContent = (v/10000).toLocaleString() + '만';
+    b.onclick = ()=>{
+      state.budget = v;
+      document.getElementById('budgetInput').value = v.toLocaleString();
+    };
+    wrap.appendChild(b);
+  });
+}
+
+renderChips();
+renderSeg('objectiveSeg', OBJECTIVES, 'objective');
+renderSeg('channelSeg', CHANNELS, 'channel');
+renderSeg('allocSeg', ALLOC_MODES, 'allocMode');
+renderPresets();
+
+document.getElementById('budgetInput').addEventListener('input', (e)=>{
+  const raw = e.target.value.replace(/[^0-9]/g,'');
+  if(e.target.value !== raw) e.target.value = raw;
+  state.budget = parseInt(raw||'0', 10);
+});
+document.getElementById('budgetInput').addEventListener('focus', (e)=>{
+  e.target.value = e.target.value.replace(/[^0-9]/g,'');
+  e.target.select();
+});
+document.getElementById('budgetInput').addEventListener('blur', (e)=>{
+  e.target.value = state.budget ? state.budget.toLocaleString() : '0';
+});
+document.getElementById('budgetInput').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter') e.target.blur();
+});
+
+/* =========================================================
+   3B. ACTUAL DATA (persistent storage)
+========================================================= */
+// actualData[mediaId] = {totalImpressions, totalClicks, totalSpend, uploads, lastUpdated}
+let actualData = {};
+let storageAvailable = true;
+
+async function loadActualData(){
+  try{
+    const list = await window.storage.list('actual:', false);
+    if(!list || !list.keys){ storageAvailable = true; }
+    for(const key of (list?.keys || [])){
+      try{
+        const res = await window.storage.get(key, false);
+        if(res && res.value){
+          const mediaId = key.replace('actual:', '');
+          actualData[mediaId] = JSON.parse(res.value);
+        }
+      }catch(e){ /* skip unreadable key */ }
+    }
+  }catch(e){
+    storageAvailable = false;
+    console.warn('저장소를 사용할 수 없어 이번 세션 동안만 데이터가 유지됩니다.', e);
+  }
+  updateDataCountBadge();
+}
+
+async function saveActualRow(mediaId, impressions, clicks, spend){
+  const prev = actualData[mediaId] || {totalImpressions:0, totalClicks:0, totalSpend:0, uploads:0};
+  const next = {
+    totalImpressions: prev.totalImpressions + impressions,
+    totalClicks: prev.totalClicks + clicks,
+    totalSpend: prev.totalSpend + spend,
+    uploads: prev.uploads + 1,
+    lastUpdated: new Date().toISOString().slice(0,10),
+  };
+  actualData[mediaId] = next;
+  try{
+    await window.storage.set('actual:'+mediaId, JSON.stringify(next), false);
+  }catch(e){
+    storageAvailable = false;
+  }
+}
+
+async function resetActual(mediaId){
+  delete actualData[mediaId];
+  try{ await window.storage.delete('actual:'+mediaId, false); }catch(e){ /* ignore */ }
+  renderManageModal();
+  updateDataCountBadge();
+}
+
+async function resetAllActual(){
+  const ids = Object.keys(actualData);
+  for(const id of ids){
+    try{ await window.storage.delete('actual:'+id, false); }catch(e){ /* ignore */ }
+  }
+  actualData = {};
+  renderManageModal();
+  updateDataCountBadge();
+}
+
+function updateDataCountBadge(){
+  const n = Object.keys(actualData).length;
+  document.getElementById('dataCountBadge').textContent = n + '건 누적';
+}
+
+/* ---- name matching ---- */
+function normalizeName(s){
+  return String(s||'').replace(/\s+/g,'').replace(/[()（）·\-]/g,'').toLowerCase();
+}
+// 실무에서 자주 쓰는 영문/축약 표기 -> 등록된 매체명 매핑 (부분일치로 못 잡는 것 보강)
+const NAME_SYNONYMS = {
+  'meta':'메타(인스타그램)', 'facebook':'메타(인스타그램)', 'fb':'메타(인스타그램)', 'instagram':'메타(인스타그램)', 'ig':'메타(인스타그램)',
+  'gdn':'구글(GDN/유튜브)', 'youtube':'구글(GDN/유튜브)', 'google':'구글(GDN/유튜브)',
+  'gfa':'네이버 GFA', 'naver':'네이버 GFA',
+  'kakaomoment':'카카오모먼트', 'kakao':'카카오모먼트',
+  'tiktok':'틱톡', 'ott':'OTT 광고(웨이브/티빙)', 'tving':'OTT 광고(웨이브/티빙)', '티빙':'OTT 광고(웨이브/티빙)', 'wavve':'OTT 광고(웨이브/티빙)',
+};
+function findMediaMatch(uploadedName){
+  const norm = normalizeName(uploadedName);
+  if(!norm) return null;
+  let exact = MEDIA.find(m => normalizeName(m.name) === norm);
+  if(exact) return exact.id;
+  if(NAME_SYNONYMS[norm]){
+    const syn = MEDIA.find(m => m.name === NAME_SYNONYMS[norm]);
+    if(syn) return syn.id;
+  }
+  let partial = MEDIA.find(m => normalizeName(m.name).includes(norm) || norm.includes(normalizeName(m.name)));
+  return partial ? partial.id : null;
+}
+
+/* ---- template download ---- */
+function downloadTemplate(){
+  const sample = [
+    {'매체명':'네이버 GFA','노출수':120000,'클릭수':540,'광고비(원)':320000},
+    {'매체명':'메타(인스타그램)','노출수':85000,'클릭수':720,'광고비(원)':410000},
+  ];
+  const ws = XLSX.utils.json_to_sheet(sample);
+  const mediaNameList = MEDIA.map(m=>({'등록된 매체명 목록':m.name, '카테고리':m.category}));
+  const ws2 = XLSX.utils.json_to_sheet(mediaNameList);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '집행리포트_입력');
+  XLSX.utils.book_append_sheet(wb, ws2, '매체명 목록(참고)');
+  XLSX.writeFile(wb, '미디어믹스_실측데이터_템플릿.xlsx');
+}
+
+/* ---- flexible header matching ---- */
+function normHeader(s){
+  return String(s||'').trim().toLowerCase().replace(/\s+/g,'').replace(/[()（）]/g,'');
+}
+const NAME_ALIASES = ['매체명','매체','매체이름','채널','채널명','media','medianame','channel','name'].map(normHeader);
+const IMP_ALIASES = ['노출수','노출','노출량','impressions','impression','imp'].map(normHeader);
+const CLICK_ALIASES = ['클릭수','클릭','clicks','click'].map(normHeader);
+const SPEND_ALIASES = ['광고비(원)','광고비','비용','집행비용','집행금액','집행예산','광고예산','매체비','매체비용','금액','예산','spend','cost','budget'].map(normHeader);
+const TOTAL_KEYWORDS = ['total','소계','합계','계'];
+
+function toNumber(v){
+  if(v===undefined || v===null || v==='') return 0;
+  const n = Number(String(v).replace(/[^0-9.\-]/g,''));
+  return isNaN(n) ? 0 : n;
+}
+function cellText(v){
+  return String(v===undefined||v===null? '' : v).trim();
+}
+
+// 헤더가 몇 번째 행에 있든, 몇 번째 열이든 자동으로 찾아냄 (매체명/노출/클릭/광고비 열 위치 탐지)
+function detectHeader(aoa){
+  let best = null;
+  const scanRows = Math.min(aoa.length, 40);
+  for(let r=0; r<scanRows; r++){
+    const row = aoa[r] || [];
+    const colMap = {};
+    let score = 0;
+    row.forEach((cell, c)=>{
+      const h = normHeader(cell);
+      if(!h || h.length>20) return; // 헤더 셀은 보통 짧음. 긴 텍스트(문장)는 헤더가 아닐 가능성 높음
+      const isMatch = (aliases)=> aliases.some(a=> h===a || h.includes(a) || a.includes(h));
+      if(colMap.name===undefined && isMatch(NAME_ALIASES)){ colMap.name=c; score++; return; }
+      if(colMap.imp===undefined && isMatch(IMP_ALIASES)){ colMap.imp=c; score++; return; }
+      if(colMap.click===undefined && isMatch(CLICK_ALIASES)){ colMap.click=c; score++; return; }
+      if(colMap.spend===undefined && isMatch(SPEND_ALIASES)){ colMap.spend=c; score++; return; }
+    });
+    const hasNumericCol = colMap.imp!==undefined || colMap.click!==undefined || colMap.spend!==undefined;
+    if(colMap.name!==undefined && hasNumericCol && (!best || score>best.score)){
+      best = {rowIdx:r, colMap, score};
+    }
+  }
+  return best;
+}
+
+// 시트 하나에서 실측 데이터 행을 추출 (병합셀로 비어있는 매체명은 바로 위 값으로 채움, 소계/합계 행은 제외)
+function extractSheetRows(aoa, sheetName){
+  const header = detectHeader(aoa);
+  if(!header) return [];
+  const {colMap} = header;
+  let lastName = '';
+  const out = [];
+  for(let r=header.rowIdx+1; r<aoa.length; r++){
+    const row = aoa[r] || [];
+    let name = cellText(row[colMap.name]);
+    if(name) lastName = name; else name = lastName;
+    if(!name) continue;
+    const normName = normHeader(name);
+    if(TOTAL_KEYWORDS.some(k=> normName===normHeader(k) || normName.endsWith(normHeader(k)))) continue;
+
+    const impressions = colMap.imp!==undefined ? toNumber(row[colMap.imp]) : 0;
+    const clicks = colMap.click!==undefined ? toNumber(row[colMap.click]) : 0;
+    const spend = colMap.spend!==undefined ? toNumber(row[colMap.spend]) : 0;
+    if(!impressions && !clicks && !spend) continue; // 수치가 전혀 없는 행은 제외
+
+    out.push({ rawName:name, sheetName, impressions, clicks, spend, mediaId: findMediaMatch(name) });
+  }
+  return out;
+}
+
+/* ---- upload & parse ---- */
+let pendingImportRows = [];
+
+function handleFileUpload(file){
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    try{
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array'});
+      if(!wb.SheetNames.length){
+        alert('업로드한 파일에서 시트를 찾지 못했어요. xlsx/xls/csv 파일인지 확인해주세요.');
+        return;
+      }
+      // 모든 시트를 훑어서 매체 데이터 표가 있는 시트를 전부 찾아 합침 (월별 시트가 나뉘어 있어도 누적)
+      let parsed = [];
+      for(const sheetName of wb.SheetNames){
+        if(normHeader(sheetName).includes(normHeader('매체명목록'))) continue;
+        const aoa = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {header:1, defval:null, blankrows:false});
+        if(!aoa.length) continue;
+        const rows = extractSheetRows(aoa, sheetName);
+        if(rows.length) parsed = parsed.concat(rows);
+      }
+      if(!parsed.length){
+        alert('업로드한 파일에서 매체별 데이터 표를 찾지 못했어요.\n매체명 열과 노출/클릭/광고비 중 하나 이상의 열이 있는 표 형태인지 확인해주세요. "템플릿 다운로드"로 예시 형식을 받아보실 수 있어요.');
+        return;
+      }
+      pendingImportRows = parsed;
+      openImportModal();
+    }catch(err){
+      alert('파일을 읽는 중 문제가 발생했어요. xlsx/csv 형식인지 확인해주세요.');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function openImportModal(){
+  const matchedCount = pendingImportRows.filter(r=>r.mediaId).length;
+  document.getElementById('importHelp').textContent =
+    `총 ${pendingImportRows.length}개 행 중 ${matchedCount}개가 자동 매칭됐어요. 매칭이 안 된 항목은 직접 매체를 선택해주세요.`;
+
+  const optionsHtml = ['<option value="">— 매핑 안함 —</option>']
+    .concat(MEDIA.map(m=>`<option value="${m.id}">${m.name}</option>`)).join('');
+
+  const body = document.getElementById('importTableBody');
+  body.innerHTML = pendingImportRows.map((r,i)=>{
+    return `
+      <tr class="${r.mediaId ? '' : 'row-unmatched'}" data-idx="${i}">
+        <td>${r.rawName}</td>
+        <td style="color:var(--text-ink-muted); font-family:'IBM Plex Mono',monospace; font-size:11px;">${r.sheetName||'-'}</td>
+        <td>
+          <select data-idx="${i}" class="mapSelect">${optionsHtml}</select>
+        </td>
+        <td style="text-align:right">${r.impressions.toLocaleString()}</td>
+        <td style="text-align:right">${r.clicks.toLocaleString()}</td>
+        <td style="text-align:right">${r.spend.toLocaleString()}</td>
+      </tr>`;
+  }).join('');
+
+  // set selected values
+  document.querySelectorAll('.mapSelect').forEach(sel=>{
+    const idx = Number(sel.dataset.idx);
+    sel.value = pendingImportRows[idx].mediaId || '';
+    sel.addEventListener('change', (e)=>{
+      pendingImportRows[idx].mediaId = e.target.value || null;
+    });
+  });
+
+  document.getElementById('importModal').classList.add('open');
+}
+
+async function confirmImport(){
+  const valid = pendingImportRows.filter(r=> r.mediaId && (r.impressions>0 || r.clicks>0 || r.spend>0));
+  for(const r of valid){
+    await saveActualRow(r.mediaId, r.impressions, r.clicks, r.spend);
+  }
+  updateDataCountBadge();
+  document.getElementById('importModal').classList.remove('open');
+  pendingImportRows = [];
+  alert(valid.length + '개 매체의 실측 데이터가 반영됐어요. "미디어믹스 생성"을 다시 눌러 확인해보세요.');
+}
+
+/* ---- manage modal ---- */
+function renderManageModal(){
+  const wrap = document.getElementById('manageList');
+  const ids = Object.keys(actualData);
+  if(!ids.length){
+    wrap.innerHTML = '<p class="empty-manage">아직 누적된 실측 데이터가 없어요. 집행 리포트를 업로드해보세요.</p>';
+    return;
+  }
+  wrap.innerHTML = ids.map(id=>{
+    const m = MEDIA.find(x=>x.id===id);
+    const a = actualData[id];
+    const ctr = a.totalImpressions>0 ? (a.totalClicks/a.totalImpressions*100).toFixed(2) : '-';
+    const cpc = a.totalClicks>0 ? Math.round(a.totalSpend/a.totalClicks).toLocaleString() : '-';
+    return `
+      <div class="manage-row">
+        <div class="info">
+          <b>${m ? m.name : id}</b><br>
+          <span class="stats">노출 ${a.totalImpressions.toLocaleString()} · 클릭 ${a.totalClicks.toLocaleString()} · CTR ${ctr}% · CPC ${cpc}원 · 업로드 ${a.uploads}회 · 최근 ${a.lastUpdated}</span>
+        </div>
+        <button data-id="${id}" class="resetOneBtn">초기화</button>
+      </div>`;
+  }).join('');
+  document.querySelectorAll('.resetOneBtn').forEach(btn=>{
+    btn.addEventListener('click', ()=> resetActual(btn.dataset.id));
+  });
+}
+
+/* =========================================================
+   4. CORE LOGIC — filter, weight, allocate
+========================================================= */
+const SEG_COLORS = ['#00D9A3','#FFB627','#5CC8FF','#FF6B5E','#B98CFF','#7FDB7A','#FF9AC1','#C9B37A','#69C6C0','#E6844A','#8FA8FF','#D6D2C4','#4FBF9F','#F2A65A'];
+
+function fmt(n, digits=0){
+  if(n===null || n===undefined || isNaN(n)) return '-';
+  return Number(n.toFixed(digits)).toLocaleString('ko-KR');
+}
+function fmtWon(n){ return fmt(n) + '원'; }
+
+function buildPlan(){
+  const {target, objective, channel, budget, allocMode} = state;
+
+  // 1) filter relevant media
+  let pool = MEDIA.filter(m=>{
+    const targetMatch = m.targets.includes('all') || m.targets.includes(target);
+    return targetMatch;
+  });
+
+  // 2) compute weight per media
+  pool = pool.map(m=>{
+    let w = 1;
+    // objective match
+    if(m.objective.includes(objective)) w *= 3;
+    else w *= 0.35;
+    // channel boost
+    if(m.channel === 'all') w *= 1.3;
+    else if(m.channel === channel) w *= 1.9;
+    else w *= 0.45;
+    // core media always relevant, extra boost on launch (브랜딩 필수매체)
+    if(m.core){
+      w = Math.max(w, 1.2);
+      if(objective === 'launch') w *= 1.6;
+    }
+    return {...m, weight: w};
+  });
+
+  // 3) 예산 규모에 맞춰 매체 개수 조절 — 예산이 작으면 4대 매체만, 커질수록 관련도 높은 매체를 추가
+  //    (3천만원 미만: 4개(4대매체만, 5개 미만) / 5천만원 이상: 5개 이상 / 그 사이는 점진적으로 증가)
+  const desiredTotal = Math.max(2, Math.min(2 + Math.floor(budget / 10000000), 15));
+  const coreItems = pool.filter(m => m.core);
+  const nonCoreItems = pool.filter(m => !m.core && m.weight >= 0.5).sort((a,b)=> b.weight - a.weight);
+  const extraCount = Math.max(0, desiredTotal - coreItems.length);
+  pool = [...coreItems, ...nonCoreItems.slice(0, extraCount)];
+
+  // 4) allocation weights
+  const rawWeights = pool.map(m => allocMode==='concentrate' ? Math.pow(m.weight, 2.2) : m.weight);
+  const totalW = rawWeights.reduce((a,b)=>a+b,0);
+  const shares = rawWeights.map(w=> w/totalW);
+
+  // 예산 배분을 매체별 "최소 집행단가"의 정수배로만 떨어지게 함 (1원 단위 엔빵 방지)
+  // 예: 단가 500만원 상품 -> 500만/1000만/1500만... 딱 떨어지는 금액만 배정
+  const units = pool.map(m => m.minBudget || 10000);
+  let lots = pool.map((m,i)=> Math.max(1, Math.round((budget * shares[i]) / units[i])));
+  let allocated = pool.map((m,i)=> lots[i]*units[i]);
+  let total = allocated.reduce((a,b)=>a+b,0);
+
+  // 목표예산에 최대한 맞게 "단위(lot)" 통째로 더하거나 빼서 보정 (원 단위 잘림 없이 딱 떨어지는 금액 유지)
+  let guard = 0;
+  if(total < budget){
+    while(guard++ < 500){
+      let bestIdx = -1, bestWeight = -1;
+      pool.forEach((m,i)=>{
+        if(total + units[i] <= budget && shares[i] > bestWeight){ bestWeight = shares[i]; bestIdx = i; }
+      });
+      if(bestIdx === -1) break; // 더 이상 통째로 넣을 수 있는 매체가 없음
+      lots[bestIdx]++; allocated[bestIdx] += units[bestIdx]; total += units[bestIdx];
+    }
+  } else if(total > budget){
+    while(guard++ < 500 && total > budget){
+      let worstIdx = -1, worstWeight = Infinity;
+      pool.forEach((m,i)=>{
+        if(lots[i] > 1 && shares[i] < worstWeight){ worstWeight = shares[i]; worstIdx = i; }
+      });
+      if(worstIdx === -1) break; // 모든 매체가 이미 최소 1단위뿐
+      lots[worstIdx]--; allocated[worstIdx] -= units[worstIdx]; total -= units[worstIdx];
+    }
+  }
+
+  pool = pool.map((m,i)=>{
+    const share = shares[i];
+    const allocatedBudget = allocated[i];
+    let impressions=null, clicks=null, ctrMid=null, cpcMid=null, cpvMid=null;
+
+    let isActual = false;
+    const actual = actualData[m.id];
+
+    if(m.type==='ctr_cpc'){
+      if(actual && actual.totalImpressions > 0 && actual.totalClicks > 0){
+        ctrMid = actual.totalClicks / actual.totalImpressions * 100;
+        cpcMid = actual.totalSpend / actual.totalClicks;
+        isActual = true;
+      } else {
+        ctrMid = (m.ctr[0]+m.ctr[1])/2;
+        cpcMid = (m.cpc[0]+m.cpc[1])/2;
+      }
+      clicks = allocatedBudget / cpcMid;
+      impressions = clicks / (ctrMid/100);
+    } else if(m.type==='cpv'){
+      cpvMid = (m.cpv[0]+m.cpv[1])/2;
+      impressions = allocatedBudget / cpvMid; // 조회수
+    }
+    const underMin = allocatedBudget < m.minBudget;
+    return {...m, share, allocatedBudget, autoBudget: allocatedBudget, impressions, clicks, ctrMid, cpcMid, cpvMid, underMin, isActual};
+  });
+
+  // sort: core first, then by allocated budget desc
+  pool.sort((a,b)=> (b.core?1:0)-(a.core?1:0) || b.allocatedBudget - a.allocatedBudget);
+
+  return pool;
+}
+
+/* =========================================================
+   5. RENDER RESULTS
+========================================================= */
+function renderResults(){
+  const plan = buildPlan();
+  const t = TARGETS.find(x=>x.id===state.target).label;
+  const o = OBJECTIVES.find(x=>x.id===state.objective).label;
+  const c = CHANNELS.find(x=>x.id===state.channel).label;
+  const am = ALLOC_MODES.find(x=>x.id===state.allocMode).label;
+
+  const totalImpressions = plan.reduce((s,m)=> s + (m.type==='ctr_cpc' ? m.impressions : (m.type==='cpv'? m.impressions : 0)), 0);
+  const totalClicks = plan.reduce((s,m)=> s + (m.type==='ctr_cpc' ? m.clicks : 0), 0);
+  const avgCPC = totalClicks>0 ? (plan.filter(m=>m.type==='ctr_cpc').reduce((s,m)=>s+m.allocatedBudget,0) / totalClicks) : 0;
+  const avgCTR = totalImpressions>0 && totalClicks>0 ? (totalClicks/totalImpressions*100) : 0;
+  const totalBudget = plan.reduce((s,m)=>s+m.allocatedBudget,0);
+
+  // allocation bar segments
+  const barSegs = plan.map((m,i)=>{
+    const pct = (m.allocatedBudget/totalBudget*100);
+    return `<div class="alloc-seg" style="width:${pct}%; background:${SEG_COLORS[i%SEG_COLORS.length]}" title="${m.name} ${pct.toFixed(1)}%"></div>`;
+  }).join('');
+  const legend = plan.slice(0,10).map((m,i)=>{
+    const pct = (m.allocatedBudget/totalBudget*100).toFixed(1);
+    return `<div class="alloc-legend-item"><span class="alloc-legend-dot" style="background:${SEG_COLORS[i%SEG_COLORS.length]}"></span>${m.name} · ${pct}%</div>`;
+  }).join('');
+
+  const rows = plan.map(m=>{
+    let impCell='-', clkCell='-', ctrCell='-', cpcCell='-';
+    if(m.type==='ctr_cpc'){
+      impCell = fmt(m.impressions);
+      clkCell = fmt(m.clicks);
+      const srcTag = m.isActual ? '<span class="data-badge" style="margin-left:5px;">실측</span>' : '';
+      ctrCell = m.ctrMid.toFixed(2)+'%'+srcTag;
+      cpcCell = fmt(m.cpcMid)+'원';
+    } else if(m.type==='cpv'){
+      impCell = fmt(m.impressions) + ' 회(조회)';
+      clkCell = '-';
+      ctrCell = '-';
+      cpcCell = fmt(m.cpvMid)+'원/조회';
+    } else {
+      impCell = '-'; clkCell='-'; ctrCell='-';
+      cpcCell = `<span class="fixed-badge">패키지 ${fmt(m.fixed[0])}~${fmt(m.fixed[1])}원</span>`;
+    }
+    return `
+      <tr>
+        <td class="mediaName">${m.name}${m.core?'<span class="core-badge">4대매체</span>':''}
+          <span class="cat">${m.category}</span>
+          <span id="warn-${m.id}">${m.underMin?'<span class="warn-badge">⚠ 최소집행예산 미달</span>':''}</span>
+        </td>
+        <td class="num">
+          <div class="budget-cell">
+            <button class="row-reset-btn" data-id="${m.id}" title="자동 배분값으로 되돌리기">↺</button>
+            <input type="text" class="budgetEditInput mono" id="budget-${m.id}" data-id="${m.id}" inputmode="numeric" value="${fmt(m.allocatedBudget)}">
+            <span class="budget-unit">원</span>
+          </div>
+        </td>
+        <td class="num" id="imp-${m.id}">${impCell}</td>
+        <td class="num" id="clk-${m.id}">${clkCell}</td>
+        <td class="num" id="ctr-${m.id}">${ctrCell}</td>
+        <td class="num" id="cpc-${m.id}">${cpcCell}</td>
+      </tr>`;
+  }).join('');
+
+  const html = `
+    <div class="plan-header">
+      <div>
+        <div class="eyebrow">Today's Recipe</div>
+        <h2 class="display">${t} · ${o}</h2>
+      </div>
+      <div class="plan-tags">
+        <span class="plan-tag">채널: ${c}</span>
+        <span class="plan-tag">배분: ${am}</span>
+        <span class="plan-tag">목표예산 ${fmtWon(state.budget)}</span>
+        <span class="plan-tag">매체 ${plan.length}종</span>
+      </div>
+    </div>
+
+    <div class="alloc-bar-wrap">
+      <div class="alloc-bar-label"><span>예산 배분 구성</span><span class="budget-status" id="budgetStatus"></span></div>
+      <div class="alloc-bar" id="allocBarInner">${barSegs}</div>
+      <div class="alloc-legend" id="allocLegendInner">${legend}${plan.length>10?`<div class="alloc-legend-item">+ ${plan.length-10}개 매체</div>`:''}</div>
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-cell"><div class="k">예상 노출</div><div class="v" id="sumImpressions">${fmt(totalImpressions)}</div></div>
+      <div class="summary-cell"><div class="k">예상 클릭</div><div class="v" id="sumClicks">${fmt(totalClicks)}</div></div>
+      <div class="summary-cell"><div class="k">평균 CTR</div><div class="v" id="sumCTR">${avgCTR.toFixed(2)}%</div></div>
+      <div class="summary-cell"><div class="k">평균 CPC</div><div class="v" id="sumCPC">${fmt(avgCPC)}원</div></div>
+      <div class="summary-cell"><div class="k">총 광고비</div><div class="v" id="sumBudget">${fmt(totalBudget)}</div></div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>매체</th>
+            <th style="text-align:right">배분 예산 (직접 수정 가능)</th>
+            <th style="text-align:right">예상 노출</th>
+            <th style="text-align:right">예상 클릭</th>
+            <th style="text-align:right">CTR</th>
+            <th style="text-align:right">CPC / 단가</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+
+    <div class="export-row">
+      <p class="export-note">배분 예산 칸을 직접 클릭해 원하는 금액으로 수정할 수 있어요. 수정하면 노출·클릭 수치가 그 매체의 CTR/CPC 기준으로 다시 계산돼요. CTR/CPC는 업계 평균 추정 범위의 중간값(또는 실측 평균) 기준입니다.</p>
+      <div style="display:flex; gap:10px;">
+        <button class="btn-secondary" id="resetAllEditsBtn" style="padding:13px 18px; font-size:12.5px;">전체 자동배분 초기화</button>
+        <button class="export-btn" id="exportBtn">⬇ 엑셀로 다운로드</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('sheetInner').innerHTML = html;
+  currentPlan = plan;
+  currentTargetBudget = state.budget;
+  wireRowEdits();
+  refreshAggregates();
+  document.getElementById('resetAllEditsBtn').addEventListener('click', renderResults);
+  document.getElementById('exportBtn').addEventListener('click', ()=>{
+    const agg = computeAggregates();
+    exportExcel(currentPlan, {t,o,c,am, ...agg});
+  });
+}
+
+/* =========================================================
+   5B. LIVE EDIT — recompute on manual budget change
+========================================================= */
+let currentPlan = [];
+let currentTargetBudget = 0;
+
+function wireRowEdits(){
+  document.querySelectorAll('.budgetEditInput').forEach(input=>{
+    input.addEventListener('input', (e)=>{
+      const id = e.target.dataset.id;
+      const raw = e.target.value.replace(/[^0-9]/g,'');
+      // 타이핑 중엔 콤마를 붙이지 않아 커서가 튀지 않게 함(값이 같으면 커서 유지됨)
+      if(e.target.value !== raw) e.target.value = raw;
+      const val = parseInt(raw||'0', 10);
+      applyBudgetEdit(id, val);
+    });
+    input.addEventListener('focus', (e)=>{
+      e.target.value = e.target.value.replace(/[^0-9]/g,'');
+      e.target.select();
+    });
+    input.addEventListener('blur', (e)=>{
+      const val = parseInt(e.target.value.replace(/[^0-9]/g,'')||'0', 10);
+      e.target.value = val ? val.toLocaleString('ko-KR') : '0';
+    });
+    input.addEventListener('keydown', (e)=>{
+      // 엔터 누르면 바로 확정(blur)되도록
+      if(e.key === 'Enter') e.target.blur();
+    });
+  });
+  document.querySelectorAll('.row-reset-btn').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      const id = e.currentTarget.dataset.id;
+      const item = currentPlan.find(x=>x.id===id);
+      if(!item) return;
+      applyBudgetEdit(id, item.autoBudget);
+      const input = document.getElementById('budget-'+id);
+      if(input) input.value = fmt(item.autoBudget);
+    });
+  });
+}
+
+function applyBudgetEdit(id, newBudget){
+  const item = currentPlan.find(x=>x.id===id);
+  if(!item) return;
+  item.allocatedBudget = newBudget;
+
+  if(item.type==='ctr_cpc'){
+    item.clicks = item.cpcMid>0 ? newBudget / item.cpcMid : 0;
+    item.impressions = item.ctrMid>0 ? item.clicks / (item.ctrMid/100) : 0;
+    document.getElementById('imp-'+id).textContent = fmt(item.impressions);
+    document.getElementById('clk-'+id).textContent = fmt(item.clicks);
+  } else if(item.type==='cpv'){
+    item.impressions = item.cpvMid>0 ? newBudget / item.cpvMid : 0;
+    document.getElementById('imp-'+id).textContent = fmt(item.impressions) + ' 회(조회)';
+  }
+  item.underMin = newBudget < item.minBudget;
+  const warnEl = document.getElementById('warn-'+id);
+  if(warnEl) warnEl.innerHTML = item.underMin ? '<span class="warn-badge">⚠ 최소집행예산 미달</span>' : '';
+
+  refreshAggregates();
+}
+
+function computeAggregates(){
+  const totalImpressions = currentPlan.reduce((s,m)=> s + (m.type==='ctr_cpc' ? m.impressions : (m.type==='cpv'? m.impressions : 0)), 0);
+  const totalClicks = currentPlan.reduce((s,m)=> s + (m.type==='ctr_cpc' ? m.clicks : 0), 0);
+  const spendOnClickable = currentPlan.filter(m=>m.type==='ctr_cpc').reduce((s,m)=>s+m.allocatedBudget,0);
+  const avgCPC = totalClicks>0 ? (spendOnClickable/totalClicks) : 0;
+  const avgCTR = totalImpressions>0 && totalClicks>0 ? (totalClicks/totalImpressions*100) : 0;
+  const totalBudget = currentPlan.reduce((s,m)=>s+m.allocatedBudget,0);
+  return {totalImpressions, totalClicks, avgCPC, avgCTR, totalBudget};
+}
+
+function refreshAggregates(){
+  if(!currentPlan.length) return;
+  const {totalImpressions, totalClicks, avgCPC, avgCTR, totalBudget} = computeAggregates();
+
+  document.getElementById('sumImpressions').textContent = fmt(totalImpressions);
+  document.getElementById('sumClicks').textContent = fmt(totalClicks);
+  document.getElementById('sumCTR').textContent = avgCTR.toFixed(2)+'%';
+  document.getElementById('sumCPC').textContent = fmt(avgCPC)+'원';
+  document.getElementById('sumBudget').textContent = fmt(totalBudget);
+
+  // budget status badge
+  const diff = totalBudget - currentTargetBudget;
+  const statusEl = document.getElementById('budgetStatus');
+  if(statusEl){
+    statusEl.className = 'budget-status';
+    if(Math.abs(diff) < 1){
+      statusEl.textContent = `배분완료 ${fmtWon(totalBudget)} (목표예산과 일치)`;
+      statusEl.classList.add('match');
+    } else if(diff > 0){
+      statusEl.textContent = `배분 ${fmtWon(totalBudget)} · 목표 대비 ${fmtWon(diff)} 초과`;
+      statusEl.classList.add('over');
+    } else {
+      statusEl.textContent = `배분 ${fmtWon(totalBudget)} · 목표 대비 ${fmtWon(Math.abs(diff))} 미배정`;
+      statusEl.classList.add('under');
+    }
+  }
+
+  // rebuild allocation bar + legend to reflect edited shares
+  const barWrap = document.getElementById('allocBarInner');
+  const legendWrap = document.getElementById('allocLegendInner');
+  if(barWrap && legendWrap && totalBudget > 0){
+    const sorted = [...currentPlan].sort((a,b)=>b.allocatedBudget-a.allocatedBudget);
+    barWrap.innerHTML = sorted.map((m)=>{
+      const idx = currentPlan.indexOf(m);
+      const pct = (m.allocatedBudget/totalBudget*100);
+      if(pct<=0) return '';
+      return `<div class="alloc-seg" style="width:${pct}%; background:${SEG_COLORS[idx%SEG_COLORS.length]}" title="${m.name} ${pct.toFixed(1)}%"></div>`;
+    }).join('');
+    legendWrap.innerHTML = sorted.slice(0,10).map((m)=>{
+      const idx = currentPlan.indexOf(m);
+      const pct = (m.allocatedBudget/totalBudget*100).toFixed(1);
+      return `<div class="alloc-legend-item"><span class="alloc-legend-dot" style="background:${SEG_COLORS[idx%SEG_COLORS.length]}"></span>${m.name} · ${pct}%</div>`;
+    }).join('') + (sorted.length>10?`<div class="alloc-legend-item">+ ${sorted.length-10}개 매체</div>`:'');
+  }
+}
+
+/* =========================================================
+   6. EXCEL EXPORT
+========================================================= */
+function exportExcel(plan, summary){
+  const rows = plan.map(m=>{
+    const base = {
+      '매체명': m.name,
+      '카테고리': m.category,
+      '4대 필수매체': m.core ? 'Y' : '',
+      '배분 예산(원)': m.allocatedBudget,
+    };
+    if(m.type==='ctr_cpc'){
+      base['예상 노출'] = Math.round(m.impressions);
+      base['예상 클릭'] = Math.round(m.clicks);
+      base['CTR(%)'] = Number(m.ctrMid.toFixed(2));
+      base['CPC(원)'] = Math.round(m.cpcMid);
+      base['데이터 출처'] = m.isActual ? '실측(누적)' : '업계 추정';
+      base['비고'] = m.underMin ? '최소집행예산 미달 가능' : '';
+    } else if(m.type==='cpv'){
+      base['예상 노출'] = '';
+      base['예상 클릭'] = Math.round(m.impressions) + ' (조회수)';
+      base['CTR(%)'] = '';
+      base['CPC(원)'] = Math.round(m.cpvMid) + ' (CPV)';
+      base['비고'] = m.underMin ? '최소집행예산 미달 가능' : '';
+    } else {
+      base['예상 노출'] = '';
+      base['예상 클릭'] = '';
+      base['CTR(%)'] = '';
+      base['CPC(원)'] = `${m.fixed[0]}~${m.fixed[1]} (패키지)`;
+      base['비고'] = '정성 매체 - 별도 협의 필요';
+    }
+    return base;
+  });
+
+  const wsData = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, wsData, '미디어믹스');
+
+  const summarySheet = XLSX.utils.json_to_sheet([
+    {항목:'타겟', 값: summary.t},
+    {항목:'캠페인 목적', 값: summary.o},
+    {항목:'판매 채널', 값: summary.c},
+    {항목:'배분 방식', 값: summary.am},
+    {항목:'총 예산', 값: summary.totalBudget},
+    {항목:'예상 노출', 값: Math.round(summary.totalImpressions)},
+    {항목:'예상 클릭', 값: Math.round(summary.totalClicks)},
+    {항목:'평균 CTR(%)', 값: Number(summary.avgCTR.toFixed(2))},
+    {항목:'평균 CPC(원)', 값: Math.round(summary.avgCPC)},
+  ]);
+  XLSX.utils.book_append_sheet(wb, summarySheet, '요약');
+
+  XLSX.writeFile(wb, `미디어믹스_${summary.t}_${summary.o}.xlsx`);
+}
+
+document.getElementById('generateBtn').addEventListener('click', renderResults);
+
+/* =========================================================
+   7. WIRE UP UPLOAD / MODALS
+========================================================= */
+document.getElementById('uploadBtn').addEventListener('click', ()=>{
+  document.getElementById('uploadInput').click();
+});
+document.getElementById('uploadInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(file) handleFileUpload(file);
+  e.target.value = '';
+});
+document.getElementById('templateBtn').addEventListener('click', downloadTemplate);
+
+document.getElementById('importModalClose').addEventListener('click', ()=>{
+  document.getElementById('importModal').classList.remove('open');
+});
+document.getElementById('importCancelBtn').addEventListener('click', ()=>{
+  document.getElementById('importModal').classList.remove('open');
+});
+document.getElementById('importConfirmBtn').addEventListener('click', confirmImport);
+
+document.getElementById('manageDataBtn').addEventListener('click', ()=>{
+  renderManageModal();
+  document.getElementById('manageModal').classList.add('open');
+});
+document.getElementById('manageModalClose').addEventListener('click', ()=>{
+  document.getElementById('manageModal').classList.remove('open');
+});
+document.getElementById('manageCloseBtn').addEventListener('click', ()=>{
+  document.getElementById('manageModal').classList.remove('open');
+});
+document.getElementById('resetAllBtn').addEventListener('click', ()=>{
+  if(confirm('누적된 실측 데이터를 모두 초기화할까요? 되돌릴 수 없어요.')) resetAllActual();
+});
+
+loadActualData();
+</script>
+</body>
+</html>
